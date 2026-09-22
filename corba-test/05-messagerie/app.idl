@@ -1,0 +1,12 @@
+module chat {
+    // Servi par le CLIENT Java : c'est l'objet que le serveur C++ rappelle
+    interface Notifiable {
+        void nouveauMessage(in string auteur, in string contenu);
+    };
+
+    // Servi par le serveur C++ : stocke en MySQL et notifie les abonnes
+    interface Messagerie {
+        void envoyer(in string auteur, in string contenu);
+        void sAbonner(in Notifiable abonne);
+    };
+};
