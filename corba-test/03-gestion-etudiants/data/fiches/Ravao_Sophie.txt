@@ -1,0 +1,7 @@
+Fiche etudiant
+===============
+Nom     : Ravao
+Prenom  : Sophie
+Classe  : Terminale S
+Moyenne : 16,33
+Mention : Tres Bien

@@ -1,0 +1,11 @@
+module app {
+    interface FileService {
+        string readMessage();
+        void writeMessage(in string msg);
+    };
+
+    interface DataService {
+        string getData();
+        void saveData(in string value);
+    };
+};

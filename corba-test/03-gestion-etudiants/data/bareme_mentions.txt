@@ -1,0 +1,5 @@
+16:Tres Bien
+14:Bien
+12:Assez Bien
+10:Passable
+0:Insuffisant

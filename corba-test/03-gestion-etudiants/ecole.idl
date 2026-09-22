@@ -1,0 +1,66 @@
+module ecole {
+    struct Etudiant {
+        long id;
+        string nom;
+        string prenom;
+        string classe;
+    };
+
+    typedef sequence<Etudiant> ListeEtudiants;
+
+    exception EtudiantIntrouvable {
+        long id;
+    };
+
+    // Servi par JAVA : convertit une moyenne en mention, selon un bareme lu dans un fichier.
+    interface MentionService {
+        string calculerMention(in double moyenne);
+    };
+
+    // Servi par JAVA : ecrit la fiche complete d'un etudiant dans un fichier.
+    interface FicheService {
+        void ecrireFiche(in Etudiant e, in double moyenne, in string mention);
+    };
+
+    // Servi par JAVA : verifie qu'un nom de classe existe dans data/classes_valides.txt.
+    interface ValidationService {
+        boolean classeValide(in string nomClasse);
+    };
+
+    // Servi par JAVA : renvoie la penalite (points a retirer) pour une matiere,
+    // lue dans data/penalites.txt. 0 si aucune penalite definie pour cette matiere.
+    interface PenaliteService {
+        double obtenirPenalite(in string matiere);
+    };
+
+    interface GestionEtudiants {
+        // --- CRUD etudiants ---
+        long ajouterEtudiant(in string nom, in string prenom, in string classe);
+        boolean modifierEtudiant(in long id, in string nom, in string prenom, in string classe);
+        boolean supprimerEtudiant(in long id);
+        ListeEtudiants listerEtudiants();
+        Etudiant rechercherEtudiant(in long id) raises (EtudiantIntrouvable);
+
+        // --- Notes ---
+        void ajouterNote(in long etudiantId, in string matiere, in double note);
+
+        // --- Calcul ---
+        double calculerMoyenne(in long etudiantId) raises (EtudiantIntrouvable);
+
+        // --- Bidirectionnel : C++ appelle Java pour obtenir la mention ---
+        void enregistrerMentionService(in MentionService svc);
+        string obtenirMention(in long etudiantId) raises (EtudiantIntrouvable);
+
+        // --- Bidirectionnel : C++ recherche l'etudiant, puis demande a Java d'ecrire sa fiche ---
+        void enregistrerFicheService(in FicheService svc);
+        void genererFiche(in long etudiantId) raises (EtudiantIntrouvable);
+
+        // --- Bidirectionnel : C++ demande a Java si la classe est valide avant de modifier ---
+        void enregistrerValidationService(in ValidationService svc);
+        boolean changerClasse(in long etudiantId, in string nouvelleClasse) raises (EtudiantIntrouvable);
+
+        // --- Bidirectionnel : C++ demande a Java la penalite (lue dans un fichier), puis l'applique ---
+        void enregistrerPenaliteService(in PenaliteService svc);
+        boolean appliquerPenalite(in long etudiantId, in string matiere) raises (EtudiantIntrouvable);
+    };
+};

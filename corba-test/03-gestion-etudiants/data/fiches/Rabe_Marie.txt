@@ -1,0 +1,7 @@
+Fiche etudiant
+===============
+Nom     : Rabe
+Prenom  : Marie
+Classe  : Terminale S
+Moyenne : 14,58
+Mention : Bien

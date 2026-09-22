@@ -1,0 +1,7 @@
+Fiche etudiant
+===============
+Nom     : Rakoto
+Prenom  : Jean
+Classe  : Terminale S
+Moyenne : 10,25
+Mention : Passable
