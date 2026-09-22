@@ -16,7 +16,11 @@ class MessagerieImpl : public POA_chat::Messagerie
     // appellent envoyer() en meme temps toucheraient le vector en meme temps.
     omni_mutex verrou;
 
+    // L'annuaire, pour retrouver le Moderateur (Java) a chaque message
+    CosNaming::NamingContextExt_var nc;
+
 public:
+    MessagerieImpl(CosNaming::NamingContextExt_ptr annuaire);
     void envoyer(const char *auteur, const char *contenu);
     void sAbonner(chat::Notifiable_ptr abonne);
 };

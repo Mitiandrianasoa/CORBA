@@ -14,6 +14,81 @@ OMNI_MAYBE_UNUSED static const char* _0RL_library_version = omniORB_4_3;
 
 
 
+::CORBA::Exception::insertExceptionToAny chat::MessageInterdit::insertToAnyFn = 0;
+::CORBA::Exception::insertExceptionToAnyNCP chat::MessageInterdit::insertToAnyFnNCP = 0;
+
+chat::MessageInterdit::MessageInterdit(const chat::MessageInterdit& _s) : ::CORBA::UserException(_s)
+{
+  mot = _s.mot;
+
+}
+
+chat::MessageInterdit::MessageInterdit(const char* _mot)
+{
+  pd_insertToAnyFn    = chat::MessageInterdit::insertToAnyFn;
+  pd_insertToAnyFnNCP = chat::MessageInterdit::insertToAnyFnNCP;
+  mot = _mot;
+
+}
+
+
+
+chat::MessageInterdit& chat::MessageInterdit::operator=(const chat::MessageInterdit& _s)
+{
+  if (&_s != this) {
+    ((::CORBA::UserException*) this)->operator=(_s);
+    mot = _s.mot;
+
+  }
+  return *this;
+}
+
+chat::MessageInterdit::~MessageInterdit() {}
+
+void chat::MessageInterdit::_raise() const { throw *this; }
+
+const char* chat::MessageInterdit::_PD_repoId = "IDL:chat/MessageInterdit:1.0";
+const char* chat::MessageInterdit::_PD_typeId = "Exception/UserException/chat::MessageInterdit";
+
+chat::MessageInterdit* chat::MessageInterdit::_downcast(::CORBA::Exception* _e) {
+  return (MessageInterdit*) _NP_is_a(_e, _PD_typeId);
+}
+
+const chat::MessageInterdit* chat::MessageInterdit::_downcast(const ::CORBA::Exception* _e) {
+  return (const MessageInterdit*) _NP_is_a(_e, _PD_typeId);
+}
+
+::CORBA::Exception* chat::MessageInterdit::_NP_duplicate() const {
+  return new MessageInterdit(*this);
+}
+
+const char* chat::MessageInterdit::_NP_typeId() const {
+  return _PD_typeId;
+}
+
+const char* chat::MessageInterdit::_NP_repoId(int* _size) const {
+  *_size = sizeof("IDL:chat/MessageInterdit:1.0");
+  return _PD_repoId;
+}
+ 
+void chat::MessageInterdit::_NP_marshal(cdrStream& _s) const {
+  *this >>= _s;
+}
+
+void
+chat::MessageInterdit::operator>>= (cdrStream& _n) const
+{
+  _n.marshalString(mot,0);
+
+}
+
+void
+chat::MessageInterdit::operator<<= (cdrStream& _n)
+{
+  mot = _n.unmarshalString(0);
+
+}
+
 chat::Notifiable_ptr chat::Notifiable_Helper::_nil() {
   return ::chat::Notifiable::_nil();
 }
@@ -253,6 +328,254 @@ chat::_impl_Notifiable::_mostDerivedRepoId()
   return ::chat::Notifiable::_PD_repoId;
 }
 
+chat::Moderateur_ptr chat::Moderateur_Helper::_nil() {
+  return ::chat::Moderateur::_nil();
+}
+
+::CORBA::Boolean chat::Moderateur_Helper::is_nil(::chat::Moderateur_ptr p) {
+  return ::CORBA::is_nil(p);
+
+}
+
+void chat::Moderateur_Helper::release(::chat::Moderateur_ptr p) {
+  ::CORBA::release(p);
+}
+
+void chat::Moderateur_Helper::marshalObjRef(::chat::Moderateur_ptr obj, cdrStream& s) {
+  ::chat::Moderateur::_marshalObjRef(obj, s);
+}
+
+chat::Moderateur_ptr chat::Moderateur_Helper::unmarshalObjRef(cdrStream& s) {
+  return ::chat::Moderateur::_unmarshalObjRef(s);
+}
+
+void chat::Moderateur_Helper::duplicate(::chat::Moderateur_ptr obj) {
+  if (obj && !obj->_NP_is_nil())  omni::duplicateObjRef(obj);
+}
+
+chat::Moderateur_ptr
+chat::Moderateur::_duplicate(::chat::Moderateur_ptr obj)
+{
+  if (obj && !obj->_NP_is_nil())  omni::duplicateObjRef(obj);
+  return obj;
+}
+
+chat::Moderateur_ptr
+chat::Moderateur::_narrow(::CORBA::Object_ptr obj)
+{
+  if (!obj || obj->_NP_is_nil() || obj->_NP_is_pseudo()) return _nil();
+  _ptr_type e = (_ptr_type) obj->_PR_getobj()->_realNarrow(_PD_repoId);
+  return e ? e : _nil();
+}
+
+
+chat::Moderateur_ptr
+chat::Moderateur::_unchecked_narrow(::CORBA::Object_ptr obj)
+{
+  if (!obj || obj->_NP_is_nil() || obj->_NP_is_pseudo()) return _nil();
+  _ptr_type e = (_ptr_type) obj->_PR_getobj()->_uncheckedNarrow(_PD_repoId);
+  return e ? e : _nil();
+}
+
+chat::Moderateur_ptr
+chat::Moderateur::_nil()
+{
+#ifdef OMNI_UNLOADABLE_STUBS
+  static _objref_Moderateur _the_nil_obj;
+  return &_the_nil_obj;
+#else
+  static _objref_Moderateur* _the_nil_ptr = 0;
+  if (!_the_nil_ptr) {
+    omni::nilRefLock().lock();
+    if (!_the_nil_ptr) {
+      _the_nil_ptr = new _objref_Moderateur;
+      registerNilCorbaObject(_the_nil_ptr);
+    }
+    omni::nilRefLock().unlock();
+  }
+  return _the_nil_ptr;
+#endif
+}
+
+const char* chat::Moderateur::_PD_repoId = "IDL:chat/Moderateur:1.0";
+
+
+chat::_objref_Moderateur::~_objref_Moderateur() {
+  
+}
+
+
+chat::_objref_Moderateur::_objref_Moderateur(omniIOR* ior, omniIdentity* id) :
+   omniObjRef(::chat::Moderateur::_PD_repoId, ior, id, 1)
+   
+   
+{
+  _PR_setobj(this);
+}
+
+void*
+chat::_objref_Moderateur::_ptrToObjRef(const char* id)
+{
+  if (id == ::chat::Moderateur::_PD_repoId)
+    return (::chat::Moderateur_ptr) this;
+  
+  if (id == ::CORBA::Object::_PD_repoId)
+    return (::CORBA::Object_ptr) this;
+
+  if (omni::strMatch(id, ::chat::Moderateur::_PD_repoId))
+    return (::chat::Moderateur_ptr) this;
+  
+  if (omni::strMatch(id, ::CORBA::Object::_PD_repoId))
+    return (::CORBA::Object_ptr) this;
+
+  return 0;
+}
+
+
+//
+// Code for chat::Moderateur::chercherMotTabou
+
+// Proxy call descriptor class. Mangled signature:
+//  _cstring_i_cstring
+class _0RL_cd_177e9eca42d53182_20000000
+  : public omniCallDescriptor
+{
+public:
+  inline _0RL_cd_177e9eca42d53182_20000000(LocalCallFn lcfn, const char* op_, size_t oplen, _CORBA_Boolean upcall=0)
+    : omniCallDescriptor(lcfn, op_, oplen, 0, _user_exns, 0, upcall)
+  {
+    
+  }
+  
+  void marshalArguments(cdrStream&);
+  void unmarshalArguments(cdrStream&);
+
+  void unmarshalReturnedValues(cdrStream&);
+  void marshalReturnedValues(cdrStream&);
+  
+  
+  static const char* const _user_exns[];
+
+  ::CORBA::String_var arg_0_;
+  const char* arg_0;
+  ::CORBA::String_var result;
+};
+
+void _0RL_cd_177e9eca42d53182_20000000::marshalArguments(cdrStream& _n)
+{
+  _n.marshalString(arg_0,0);
+
+}
+
+void _0RL_cd_177e9eca42d53182_20000000::unmarshalArguments(cdrStream& _n)
+{
+  arg_0_ = _n.unmarshalString(0);
+  arg_0 = arg_0_.in();
+
+}
+
+void _0RL_cd_177e9eca42d53182_20000000::marshalReturnedValues(cdrStream& _n)
+{
+  _n.marshalString(result,0);
+
+}
+
+void _0RL_cd_177e9eca42d53182_20000000::unmarshalReturnedValues(cdrStream& _n)
+{
+  result = _n.unmarshalString(0);
+
+}
+
+const char* const _0RL_cd_177e9eca42d53182_20000000::_user_exns[] = {
+  0
+};
+
+// Local call call-back function.
+static void
+_0RL_lcfn_177e9eca42d53182_30000000(omniCallDescriptor* cd, omniServant* svnt)
+{
+  _0RL_cd_177e9eca42d53182_20000000* tcd = (_0RL_cd_177e9eca42d53182_20000000*)cd;
+  chat::_impl_Moderateur* impl = (chat::_impl_Moderateur*) svnt->_ptrToInterface(chat::Moderateur::_PD_repoId);
+  tcd->result = impl->chercherMotTabou(tcd->arg_0);
+
+
+}
+
+char* chat::_objref_Moderateur::chercherMotTabou(const char* contenu)
+{
+  _0RL_cd_177e9eca42d53182_20000000 _call_desc(_0RL_lcfn_177e9eca42d53182_30000000, "chercherMotTabou", 17);
+  _call_desc.arg_0 = contenu;
+
+  _invoke(_call_desc);
+  return _call_desc.result._retn();
+
+
+}
+
+chat::_pof_Moderateur::~_pof_Moderateur() {}
+
+
+omniObjRef*
+chat::_pof_Moderateur::newObjRef(omniIOR* ior, omniIdentity* id)
+{
+  return new ::chat::_objref_Moderateur(ior, id);
+}
+
+
+::CORBA::Boolean
+chat::_pof_Moderateur::is_a(const char* id) const
+{
+  if (omni::ptrStrMatch(id, ::chat::Moderateur::_PD_repoId))
+    return 1;
+  
+  return 0;
+}
+
+const chat::_pof_Moderateur _the_pof_chat_mModerateur;
+
+chat::_impl_Moderateur::~_impl_Moderateur() {}
+
+
+::CORBA::Boolean
+chat::_impl_Moderateur::_dispatch(omniCallHandle& _handle)
+{
+  const char* op = _handle.operation_name();
+
+  if (omni::strMatch(op, "chercherMotTabou")) {
+
+    _0RL_cd_177e9eca42d53182_20000000 _call_desc(_0RL_lcfn_177e9eca42d53182_30000000, "chercherMotTabou", 17, 1);
+    
+    _handle.upcall(this,_call_desc);
+    return 1;
+  }
+
+
+  return 0;
+}
+
+void*
+chat::_impl_Moderateur::_ptrToInterface(const char* id)
+{
+  if (id == ::chat::Moderateur::_PD_repoId)
+    return (::chat::_impl_Moderateur*) this;
+  
+  if (id == ::CORBA::Object::_PD_repoId)
+    return (void*) 1;
+
+  if (omni::strMatch(id, ::chat::Moderateur::_PD_repoId))
+    return (::chat::_impl_Moderateur*) this;
+  
+  if (omni::strMatch(id, ::CORBA::Object::_PD_repoId))
+    return (void*) 1;
+  return 0;
+}
+
+const char*
+chat::_impl_Moderateur::_mostDerivedRepoId()
+{
+  return ::chat::Moderateur::_PD_repoId;
+}
+
 chat::Messagerie_ptr chat::Messagerie_Helper::_nil() {
   return ::chat::Messagerie::_nil();
 }
@@ -360,20 +683,97 @@ chat::_objref_Messagerie::_ptrToObjRef(const char* id)
 //
 // Code for chat::Messagerie::envoyer
 
+// Proxy call descriptor class. Mangled signature:
+//  void_i_cstring_i_cstring_e_cchat_mMessageInterdit
+class _0RL_cd_177e9eca42d53182_40000000
+  : public omniCallDescriptor
+{
+public:
+  inline _0RL_cd_177e9eca42d53182_40000000(LocalCallFn lcfn, const char* op_, size_t oplen, _CORBA_Boolean upcall=0)
+    : omniCallDescriptor(lcfn, op_, oplen, 0, _user_exns, 1, upcall)
+  {
+    
+  }
+  
+  void marshalArguments(cdrStream&);
+  void unmarshalArguments(cdrStream&);
+
+    
+  void userException(cdrStream&, _OMNI_NS(IOP_C)*, const char*);
+  static const char* const _user_exns[];
+
+  ::CORBA::String_var arg_0_;
+  const char* arg_0;
+  ::CORBA::String_var arg_1_;
+  const char* arg_1;
+};
+
+void _0RL_cd_177e9eca42d53182_40000000::marshalArguments(cdrStream& _n)
+{
+  _n.marshalString(arg_0,0);
+  _n.marshalString(arg_1,0);
+
+}
+
+void _0RL_cd_177e9eca42d53182_40000000::unmarshalArguments(cdrStream& _n)
+{
+  arg_0_ = _n.unmarshalString(0);
+  arg_0 = arg_0_.in();
+  arg_1_ = _n.unmarshalString(0);
+  arg_1 = arg_1_.in();
+
+}
+
+const char* const _0RL_cd_177e9eca42d53182_40000000::_user_exns[] = {
+  chat::MessageInterdit::_PD_repoId
+};
+
+void _0RL_cd_177e9eca42d53182_40000000::userException(cdrStream& s, _OMNI_NS(IOP_C)* iop_client, const char* repoId)
+{
+  if (omni::strMatch(repoId, chat::MessageInterdit::_PD_repoId)) {
+    chat::MessageInterdit _ex;
+    _ex <<= s;
+    if (iop_client) iop_client->RequestCompleted();
+    throw _ex;
+  }
+
+
+  else {
+    if (iop_client) iop_client->RequestCompleted(1);
+    OMNIORB_THROW(UNKNOWN,UNKNOWN_UserException,
+                  (::CORBA::CompletionStatus)s.completion());
+  }
+}
+
 // Local call call-back function.
 static void
-_0RL_lcfn_177e9eca42d53182_20000000(omniCallDescriptor* cd, omniServant* svnt)
+_0RL_lcfn_177e9eca42d53182_50000000(omniCallDescriptor* cd, omniServant* svnt)
 {
-  _0RL_cd_177e9eca42d53182_00000000* tcd = (_0RL_cd_177e9eca42d53182_00000000*)cd;
+  _0RL_cd_177e9eca42d53182_40000000* tcd = (_0RL_cd_177e9eca42d53182_40000000*)cd;
   chat::_impl_Messagerie* impl = (chat::_impl_Messagerie*) svnt->_ptrToInterface(chat::Messagerie::_PD_repoId);
+#ifdef OMNI_HAS_Cplusplus_catch_exception_by_base
   impl->envoyer(tcd->arg_0, tcd->arg_1);
+#else
+  if (!cd->is_upcall())
+    impl->envoyer(tcd->arg_0, tcd->arg_1);
+  else {
+    try {
+      impl->envoyer(tcd->arg_0, tcd->arg_1);
+    }
+    catch(chat::MessageInterdit& ex) {
+      throw omniORB::StubUserException(ex._NP_duplicate());
+    }
+
+
+  }
+#endif
 
 
 }
 
 void chat::_objref_Messagerie::envoyer(const char* auteur, const char* contenu)
 {
-  _0RL_cd_177e9eca42d53182_00000000 _call_desc(_0RL_lcfn_177e9eca42d53182_20000000, "envoyer", 8);
+  _0RL_cd_177e9eca42d53182_40000000 _call_desc(_0RL_lcfn_177e9eca42d53182_50000000, "envoyer", 8);
   _call_desc.arg_0 = auteur;
   _call_desc.arg_1 = contenu;
 
@@ -389,11 +789,11 @@ void chat::_objref_Messagerie::envoyer(const char* auteur, const char* contenu)
 
 // Proxy call descriptor class. Mangled signature:
 //  void_i_cchat_mNotifiable
-class _0RL_cd_177e9eca42d53182_30000000
+class _0RL_cd_177e9eca42d53182_60000000
   : public omniCallDescriptor
 {
 public:
-  inline _0RL_cd_177e9eca42d53182_30000000(LocalCallFn lcfn, const char* op_, size_t oplen, _CORBA_Boolean upcall=0)
+  inline _0RL_cd_177e9eca42d53182_60000000(LocalCallFn lcfn, const char* op_, size_t oplen, _CORBA_Boolean upcall=0)
     : omniCallDescriptor(lcfn, op_, oplen, 0, _user_exns, 0, upcall)
   {
     
@@ -410,28 +810,28 @@ public:
   chat::Notifiable_ptr arg_0;
 };
 
-void _0RL_cd_177e9eca42d53182_30000000::marshalArguments(cdrStream& _n)
+void _0RL_cd_177e9eca42d53182_60000000::marshalArguments(cdrStream& _n)
 {
   chat::Notifiable::_marshalObjRef(arg_0,_n);
 
 }
 
-void _0RL_cd_177e9eca42d53182_30000000::unmarshalArguments(cdrStream& _n)
+void _0RL_cd_177e9eca42d53182_60000000::unmarshalArguments(cdrStream& _n)
 {
   arg_0_ = chat::Notifiable::_unmarshalObjRef(_n);
   arg_0 = arg_0_.in();
 
 }
 
-const char* const _0RL_cd_177e9eca42d53182_30000000::_user_exns[] = {
+const char* const _0RL_cd_177e9eca42d53182_60000000::_user_exns[] = {
   0
 };
 
 // Local call call-back function.
 static void
-_0RL_lcfn_177e9eca42d53182_40000000(omniCallDescriptor* cd, omniServant* svnt)
+_0RL_lcfn_177e9eca42d53182_70000000(omniCallDescriptor* cd, omniServant* svnt)
 {
-  _0RL_cd_177e9eca42d53182_30000000* tcd = (_0RL_cd_177e9eca42d53182_30000000*)cd;
+  _0RL_cd_177e9eca42d53182_60000000* tcd = (_0RL_cd_177e9eca42d53182_60000000*)cd;
   chat::_impl_Messagerie* impl = (chat::_impl_Messagerie*) svnt->_ptrToInterface(chat::Messagerie::_PD_repoId);
   impl->sAbonner(tcd->arg_0);
 
@@ -440,7 +840,7 @@ _0RL_lcfn_177e9eca42d53182_40000000(omniCallDescriptor* cd, omniServant* svnt)
 
 void chat::_objref_Messagerie::sAbonner(::chat::Notifiable_ptr abonne)
 {
-  _0RL_cd_177e9eca42d53182_30000000 _call_desc(_0RL_lcfn_177e9eca42d53182_40000000, "sAbonner", 9);
+  _0RL_cd_177e9eca42d53182_60000000 _call_desc(_0RL_lcfn_177e9eca42d53182_70000000, "sAbonner", 9);
   _call_desc.arg_0 = abonne;
 
   _invoke(_call_desc);
@@ -480,7 +880,7 @@ chat::_impl_Messagerie::_dispatch(omniCallHandle& _handle)
 
   if (omni::strMatch(op, "envoyer")) {
 
-    _0RL_cd_177e9eca42d53182_00000000 _call_desc(_0RL_lcfn_177e9eca42d53182_20000000, "envoyer", 8, 1);
+    _0RL_cd_177e9eca42d53182_40000000 _call_desc(_0RL_lcfn_177e9eca42d53182_50000000, "envoyer", 8, 1);
     
     _handle.upcall(this,_call_desc);
     return 1;
@@ -488,7 +888,7 @@ chat::_impl_Messagerie::_dispatch(omniCallHandle& _handle)
 
   if (omni::strMatch(op, "sAbonner")) {
 
-    _0RL_cd_177e9eca42d53182_30000000 _call_desc(_0RL_lcfn_177e9eca42d53182_40000000, "sAbonner", 9, 1);
+    _0RL_cd_177e9eca42d53182_60000000 _call_desc(_0RL_lcfn_177e9eca42d53182_70000000, "sAbonner", 9, 1);
     
     _handle.upcall(this,_call_desc);
     return 1;
@@ -522,6 +922,8 @@ chat::_impl_Messagerie::_mostDerivedRepoId()
 }
 
 POA_chat::Notifiable::~Notifiable() {}
+
+POA_chat::Moderateur::~Moderateur() {}
 
 POA_chat::Messagerie::~Messagerie() {}
 

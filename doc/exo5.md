@@ -1,6 +1,6 @@
 # Exercice 5 — Messagerie avec notifications (callback CORBA)
 
-**Statut : construit et testé de bout en bout** (1 serveur C++ + 2 clients Java, messages stockés en MySQL, notifications reçues des deux côtés — voir la sortie réelle à l'étape 6).
+**Statut : construit et testé de bout en bout, y compris l'extension « mots tabous » (§10)** (1 serveur C++ + 2 clients Java, messages stockés en MySQL, notifications reçues des deux côtés — voir la sortie réelle à l'étape 6).
 
 Code : `corba-test/05-messagerie/`
 
@@ -61,10 +61,12 @@ Dans l'exercice 5, **seul le serveur C++ est dans l'annuaire**. Le client Java n
 05-messagerie/
 ├── app.idl                       → IDL partagé (écrit à la main)
 ├── setup-mysql.sql               → crée la table messages
+├── data/tabou.txt                → un mot interdit par ligne (lu par Java, voir §10)
 ├── java/
 │   ├── src/
 │   │   ├── chat/                  → généré par idlj, ne pas toucher
 │   │   ├── NotifiableImpl.java    → écrit à la main (servant du CLIENT : reçoit les rappels)
+│   │   ├── ModerateurImpl.java    → écrit à la main (servant : vérifie les mots tabous, voir §10)
 │   │   └── ClientMessagerie.java  → écrit à la main (client + mini-serveur)
 │   └── bin/                       → .class
 └── cpp/
@@ -88,6 +90,8 @@ Correspondance avec le modèle 02 :
 ---
 
 ## 4. L'IDL (`app.idl`)
+
+> Ci-dessous, la version de départ de l'exercice. La version finale ajoute `MessageInterdit` et `Moderateur` : voir §10.
 
 ```idl
 module chat {
@@ -310,7 +314,7 @@ cd corba-test/05-messagerie
 
 # Java
 cd java/src
-javac -d ../bin chat/*.java NotifiableImpl.java ClientMessagerie.java
+javac -d ../bin chat/*.java NotifiableImpl.java ModerateurImpl.java ClientMessagerie.java
 cd ../..
 
 # C++
@@ -396,3 +400,198 @@ Test du client fermé (Bob quitte, puis Alice envoie) :
 - **Se désabonner** : ajouter `void seDesabonner(in Notifiable abonne);` et, côté C++, retirer la référence dont `abonne->_is_equivalent(*it)` est vrai.
 - **Historique** : ajouter `sequence<string> historique();` qui fait un `SELECT` sur la table `messages` (combine l'exercice 2 et celui-ci).
 - **Rappeler sans bloquer le verrou** : ici le verrou est tenu pendant les rappels. Si un client, dans `nouveauMessage`, rappelait lui-même `envoyer()`, on aurait un interblocage. La version robuste copie le `vector` sous verrou, puis fait les rappels hors du verrou.
+
+---
+
+## 10. Extension : les mots tabous (C++ demande à Java de vérifier)
+
+### 10.1 Le besoin
+
+On ajoute un fichier `data/tabou.txt`, avec un mot interdit par ligne :
+```
+idiot
+nul
+imbecile
+```
+Quand un message arrive, **le serveur C++ demande à Java** si le message contient un mot de ce fichier. Si c'est le cas, le message est **refusé** : il n'est pas enregistré en MySQL, personne n'est notifié, et l'expéditeur reçoit une erreur.
+
+Pourquoi c'est C++ qui demande à Java ? Parce que c'est **la même règle que dans les projets 02 et 03** : les fichiers sont gérés par Java. C++ a besoin d'une info que seul Java possède, donc c'est C++ qui prend l'initiative de l'appel.
+
+### 10.2 Ce qui a été ajouté à l'IDL
+
+```idl
+module chat {
+    exception MessageInterdit {
+        string mot;
+    };
+
+    interface Notifiable { ... };                      // inchangé
+
+    interface Moderateur {
+        string chercherMotTabou(in string contenu);
+    };
+
+    interface Messagerie {
+        void envoyer(in string auteur, in string contenu) raises (MessageInterdit);
+        void sAbonner(in Notifiable abonne);           // inchangé
+    };
+};
+```
+
+- **`Moderateur`** : une nouvelle interface, **implémentée en Java**. `chercherMotTabou` renvoie le mot interdit trouvé, ou `""` si le message est propre. Renvoyer le mot plutôt qu'un simple `boolean` permet de dire à l'utilisateur *quel* mot pose problème.
+- **`exception MessageInterdit`** : une exception IDL. Elle contient un champ (`mot`), un peu comme une `struct`.
+- **`raises (MessageInterdit)`** sur `envoyer` : ça veut dire « cette méthode peut lever cette exception ». Côté Java, `idlj` génère donc `envoyer(...) throws MessageInterdit`, et **le compilateur t'oblige** à l'attraper avec un `try/catch`.
+
+Après toute modification de l'IDL, il faut **régénérer les deux côtés** (idlj + omniidl) et **recompiler les deux côtés**.
+
+### 10.3 Côté Java — la fonction qui vérifie (`ModerateurImpl.java`)
+
+```java
+public class ModerateurImpl extends ModerateurPOA {
+    private static final Path FICHIER = Paths.get("data", "tabou.txt");
+
+    public String chercherMotTabou(String contenu) {
+        List<String> tabous = Files.readAllLines(FICHIER, StandardCharsets.UTF_8);  // (dans un try/catch)
+
+        for (String mot : contenu.toLowerCase().split("[^\\p{L}]+")) {
+            for (String tabou : tabous) {
+                if (!tabou.trim().isEmpty() && mot.equals(tabou.trim().toLowerCase())) {
+                    return mot;          // trouvé → on renvoie le mot
+                }
+            }
+        }
+        return "";                       // rien trouvé → message propre
+    }
+}
+```
+
+- C'est un servant, exactement comme `FileServiceImpl` dans le 02 (`extends XxxPOA`, et le fichier est lu avec `java.nio`).
+- **Le fichier est relu à chaque appel** : tu peux ajouter un mot dans `tabou.txt` pendant que tout tourne, et il est pris en compte dès le message suivant.
+- `split("[^\\p{L}]+")` découpe le message en mots. Tout ce qui n'est pas une lettre (espaces, ponctuation, chiffres) sert de séparateur. Donc `"tu es un IDIOT !"` donne `[tu, es, un, idiot]`. On compare **mot par mot**, en minuscules. Ainsi `IDIOT` est bien détecté, mais `nulle` ne déclenche pas le mot `nul` (contrairement à un simple `contains`).
+
+### 10.4 Côté Java — inscrire le Moderateur (`ClientMessagerie.java`)
+
+```java
+// Créer le servant et sa référence (comme pour Notifiable)
+ModerateurImpl modImpl = new ModerateurImpl();
+Moderateur modRef = ModerateurHelper.narrow(rootpoa.servant_to_reference(modImpl));
+...
+// L'inscrire dans l'annuaire : C++ le retrouvera avec resolve_str("Moderateur")
+ncRef.rebind(ncRef.to_name("Moderateur"), modRef);
+```
+
+Et l'envoi attrape maintenant l'exception :
+```java
+try {
+    messagerie.envoyer(pseudo, ligne);
+} catch (MessageInterdit e) {
+    System.out.println("[Java] Message refuse : le mot \"" + e.mot + "\" est interdit");
+}
+```
+
+**Remarque importante, avec deux façons de faire côte à côte :**
+
+| | Notifiable | Moderateur |
+|---|---|---|
+| Comment C++ obtient la référence | Java la **donne** via `sAbonner(...)` | C++ la **cherche** dans l'annuaire (`resolve_str`) |
+| Même méthode que… | le callback vu en §5 | `FileService` dans le 02 |
+| Pourquoi ce choix | il faut rappeler **chaque** client | **un seul** modérateur suffit (tous lisent le même fichier) |
+
+Tu as donc les deux techniques pour que C++ trouve Java dans le même projet. À l'examen, les deux sont valables.
+
+Chaque client Java fait un `rebind("Moderateur")`. `rebind` **remplace** l'inscription précédente, donc c'est le modérateur du **dernier** client lancé qui est utilisé. Ce n'est pas un problème, puisqu'ils lisent tous le même `tabou.txt`.
+
+### 10.5 Côté C++ — appeler Java avant de stocker (`MessagerieImpl.cc`)
+
+Pour pouvoir chercher dans l'annuaire, le servant a maintenant besoin de l'annuaire. On le lui donne dans son **constructeur** :
+
+```cpp
+// MessagerieImpl.hh
+CosNaming::NamingContextExt_var nc;
+MessagerieImpl(CosNaming::NamingContextExt_ptr annuaire);
+
+// MessagerieImpl.cc
+MessagerieImpl::MessagerieImpl(CosNaming::NamingContextExt_ptr annuaire)
+    : nc(CosNaming::NamingContextExt::_duplicate(annuaire)) {}
+```
+(Encore un `_duplicate` : on **garde** une référence reçue en paramètre, même règle qu'en §5.2.)
+
+Du coup, dans `cpp_peer.cc`, on récupère l'annuaire **avant** de créer le servant : `new MessagerieImpl(nc)`.
+
+Au début de `envoyer()`, on ajoute l'étape 0 :
+
+```cpp
+// 0) Demander a Java si le message contient un mot tabou (appel C++ -> Java)
+CORBA::String_var motTabou;
+try {
+    CORBA::Object_var obj = nc->resolve_str("Moderateur");
+    chat::Moderateur_var moderateur = chat::Moderateur::_narrow(obj);
+    motTabou = moderateur->chercherMotTabou(contenu);
+} catch (const CORBA::Exception& e) {
+    std::cout << "[C++] Moderateur indisponible, message accepte sans verification" << std::endl;
+    motTabou = CORBA::string_dup("");
+}
+
+if (strlen(motTabou) > 0) {
+    throw chat::MessageInterdit(motTabou);   // on s'arrête ici : ni MySQL, ni callback
+}
+
+// 1) Enregistrer le message en MySQL      (inchangé)
+// 2) CALLBACK vers les abonnés            (inchangé)
+```
+
+- Les 3 lignes `resolve_str` / `_narrow` / appel sont **exactement celles du 02** (`resolve_str("FileService")` puis `file->readMessage()`).
+- **`CORBA::String_var`** : un `string` IDL renvoyé par un appel distant est alloué par l'ORB. Le `String_var` le libère tout seul (sinon, fuite mémoire).
+- **`throw chat::MessageInterdit(motTabou)`** : omniidl a généré un constructeur qui prend le champ `mot`. L'exception est **envoyée par le réseau** à l'appelant Java, qui la reçoit dans son `catch (MessageInterdit e)`. C'est une exception qui traverse les langages : lancée en C++, attrapée en Java.
+- Le `throw` arrive **avant** l'`INSERT` et avant la boucle de callbacks. Un message refusé n'est donc ni stocké, ni diffusé.
+- Si aucun modérateur ne répond (aucun client Java inscrit, ou le dernier inscrit a été fermé), on **accepte** le message plutôt que de tout bloquer. C'est un choix : on pourrait aussi décider de refuser.
+
+### 10.6 Chronologie d'un message refusé
+
+```
+ Bob (Java)                          cpp_peer (C++)                     Java (Moderateur)
+ thread clavier    thread ORB
+     │                                    │                                   │
+     │── envoyer("Bob","tu es un IDIOT") ─▶│                                   │
+     │   (bloqué)                          │── resolve_str("Moderateur") ──▶ omniNames
+     │                                     │── chercherMotTabou(...) ─────────▶│ lit tabou.txt
+     │                                     │◀────────────────────── "idiot" ───│
+     │                                     │ throw MessageInterdit("idiot")
+     │◀──────────── exception MessageInterdit ─│   (pas d'INSERT, pas de callback)
+     │ catch → "Message refuse : le mot "idiot" est interdit"
+```
+
+Dans ce cas, **un seul appel `envoyer()` déclenche un appel C++ → Java au milieu**. C'est encore la situation « Java bloqué dans `envoyer()` pendant que C++ l'appelle ». Elle marche grâce au thread `orb.run()` de l'étape (c) du §5.6.
+
+### 10.7 Tester
+
+Recompiler les deux côtés (l'IDL a changé) :
+```bash
+cd corba-test/05-messagerie
+cd java/src && javac -d ../bin chat/*.java NotifiableImpl.java ModerateurImpl.java ClientMessagerie.java && cd ../..
+cd cpp && make && cd ..
+```
+Lancer comme en §7.3 (serveur C++ d'abord, puis Alice et Bob). **Lance les clients depuis `05-messagerie/`**, sinon Java ne trouve pas `data/tabou.txt` (le chemin est relatif).
+
+Sortie réelle (testée) :
+```
+=== C++
+[C++] Message recu de Alice : bonjour tout le monde
+[C++] Message recu de Bob : tu es un IDIOT !
+[C++] Message refuse (mot tabou : idiot)
+
+=== Alice
+[Java] Moderateur enregistre dans l'annuaire
+[Java] Alice abonne. Tape un message puis Entree (Ctrl+D pour quitter).
+[Java] (accuse de reception) mon message a ete diffuse
+
+=== Bob
+[Java] Moderateur enregistre dans l'annuaire
+[Java] Bob abonne. Tape un message puis Entree (Ctrl+D pour quitter).
+[Java] >>> Notification : Alice dit : bonjour tout le monde
+[Java] Moderateur : mot tabou "idiot" detecte
+[Java] Message refuse : le mot "idiot" est interdit
+```
+Alice n'a **pas** reçu le message de Bob, et il n'est **pas** dans la table `messages`.
+
+Essaie aussi d'ajouter un mot dans `data/tabou.txt` pendant que tout tourne, puis de l'envoyer : il est refusé tout de suite, sans rien relancer.

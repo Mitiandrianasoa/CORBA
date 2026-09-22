@@ -1,12 +1,23 @@
 module chat {
+    // Levee par le serveur C++ quand un message contient un mot tabou
+    exception MessageInterdit {
+        string mot;
+    };
+
     // Servi par le CLIENT Java : c'est l'objet que le serveur C++ rappelle
     interface Notifiable {
         void nouveauMessage(in string auteur, in string contenu);
     };
 
-    // Servi par le serveur C++ : stocke en MySQL et notifie les abonnes
+    // Servi par Java : lit data/tabou.txt. Renvoie le mot tabou trouve,
+    // ou "" si le message est propre. C'est C++ qui l'appelle.
+    interface Moderateur {
+        string chercherMotTabou(in string contenu);
+    };
+
+    // Servi par le serveur C++ : verifie, stocke en MySQL et notifie les abonnes
     interface Messagerie {
-        void envoyer(in string auteur, in string contenu);
+        void envoyer(in string auteur, in string contenu) raises (MessageInterdit);
         void sAbonner(in Notifiable abonne);
     };
 };
