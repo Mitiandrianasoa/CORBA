@@ -163,3 +163,150 @@ timeout 3 tnameserv -ORBInitialPort 2809 2>&1 | head -3
 | **MySQL Connector/C++** | `libmysqlcppconn-dev` | Connexion MySQL depuis C++ |
 
 Une fois toutes ces vérifications passées sans erreur, votre environnement est prêt pour le développement CORBA bidirectionnel Java ↔ C++.
+
+
+
+Voici la version Windows de la liste complète. Attention : l'installation sur Windows est plus manuelle que sous Linux, notamment pour omniORB et la configuration de Visual Studio.
+
+### 1. Java 8 (JDK) — Obligatoire pour CORBA
+
+CORBA a été retiré à partir de Java 11. Il faut donc **Java 8**. Sur Windows, le plus simple est de passer par **Adoptium (Temurin)**.
+
+**Installation :**
+1. Va sur le site d'Adoptium : `https://adoptium.net/temurin/releases/?version=8`
+2. Télécharge l'installeur **`.msi` (x64)** pour Windows.
+3. Lance l'installeur et suis les étapes .
+
+**Vérification (dans l'invite de commandes) :**
+```cmd
+java -version
+REM Attendu : openjdk version "1.8.0_xxx"
+
+where idlj
+REM Attendu : C:\Program Files\Eclipse Adoptium\jdk-8...\bin\idlj.exe
+
+idlj -version
+REM Doit afficher la version
+```
+
+### 2. omniORB (Implémentation CORBA pour C++)
+
+Sur Windows, il n'y a pas d'installeur automatique. Il faut télécharger une archive **binaire** compilée pour Visual Studio .
+
+**Installation :**
+1. Va sur la page de téléchargement d'omniORB sur OpenRTM.org ou SourceForge : `https://openrtm.org/pub/omniORB/win32/`
+2. Choisis la version correspondant à ton Visual Studio. Par exemple `omniORB-4.3.2-x64-vc16.zip` (vc16 = Visual Studio 2019/2022) .
+3. **Décompresse le fichier ZIP** dans un dossier simple, par exemple `C:\omniORB`.
+4. **Ajoute le dossier `bin` à la variable d'environnement `Path`** :
+   - `C:\omniORB\bin\x86_win32` (pour une build 32 bits) ou `C:\omniORB\bin\x64_win32` (pour 64 bits) .
+
+**Vérification (dans une NOUVELLE invite de commandes) :**
+```cmd
+where omniidl
+REM Attendu : C:\omniORB\bin\...\omniidl.exe
+
+where omniNames
+REM Attendu : C:\omniORB\bin\...\omniNames.exe
+
+omniidl -bcxx -v
+REM Doit afficher des informations de version
+```
+
+### 3. MySQL Server (Le serveur de base de données)
+
+**Installation :**
+1. Télécharge **MySQL Installer** sur le site officiel : `https://dev.mysql.com/downloads/installer/` .
+2. Lance l'installeur et choisis **"Server Only"** ou **"Developer Default"** (qui inclut les outils) .
+3. Suis les étapes de configuration. **Note bien le mot de passe root** que tu définis.
+4. À la fin, MySQL est installé comme un service Windows et démarrera automatiquement .
+
+**Vérification :**
+```cmd
+mysql --version
+REM Attendu : mysql Ver 8.0.xx
+
+REM Ouvre une invite de commandes en tant qu'Administrateur
+sc query MySQL80
+REM Attendu : STATE : 4 RUNNING (ou un nom similaire)
+```
+
+### 4. MySQL Connector/C++ (Bibliothèque de connexion C++)
+
+Pour que ton code C++ puisse parler à MySQL.
+
+**Installation :**
+1. Va sur la page des téléchargements MySQL Connector/C++ : `https://dev.mysql.com/downloads/connector/cpp/`
+2. Télécharge l'installeur **MSI** pour Windows .
+3. Lance l'installeur. **Important** : choisis **"Custom"** et installe **le "Developer component"** en plus du "DLL component". C'est le Developer component qui contient les fichiers `.h` et `.lib` nécessaires à la compilation .
+4. Installe aussi le **Visual C++ Redistributable** si demandé .
+
+**Vérification :**
+Ouvre l'explorateur de fichiers et navigue vers le dossier d'installation (souvent `C:\Program Files\MySQL\MySQL Connector C++ 8.0\`).
+Tu dois voir les dossiers `include` et `lib`.
+
+### 5. Configuration de l'environnement (Variables & omniORB.cfg)
+
+**Créer le fichier de configuration omniORB :**
+Crée un fichier `C:\omniORB\omniORB.cfg` (ou ailleurs) avec ce contenu :
+```ini
+InitRef = NameService=corbaname::localhost:2809
+supportBootstrapAgent = 1
+```
+Puis définis la variable d'environnement système `OMNIORB_CONFIG` pointant vers ce fichier (ex: `C:\omniORB\omniORB.cfg`).
+
+**Variables d'environnement à ajouter (Panneau de configuration > Système > Paramètres système avancés > Variables d'environnement) :**
+- `JAVA_HOME` = `C:\Program Files\Eclipse Adoptium\jdk-8.0.xxx` (le chemin de ton JDK 8)
+- `OMNIORB_CONFIG` = `C:\omniORB\omniORB.cfg`
+
+**Vérification :**
+Ferme et rouvre l'invite de commandes, puis :
+```cmd
+echo %JAVA_HOME%
+echo %OMNIORB_CONFIG%
+```
+
+### 6. Vérification finale complète
+
+```cmd
+echo === 1. JAVA ===
+java -version 2>&1
+where idlj
+where tnameserv
+
+echo === 2. omniORB ===
+where omniNames
+where omniidl
+
+echo === 3. MySQL Server ===
+mysql --version
+sc query MySQL80 | findstr STATE
+
+echo === 4. MySQL Connector/C++ ===
+dir "C:\Program Files\MySQL\MySQL Connector C++ 8.0\include" /b 2>nul | findstr /i "mysql_connection" || echo NON TROUVE
+dir "C:\Program Files\MySQL\MySQL Connector C++ 8.0\lib" /b 2>nul | findstr /i "mysqlcppconn" || echo NON TROUVE
+
+echo === 5. Variables d'environnement ===
+echo JAVA_HOME=%JAVA_HOME%
+echo OMNIORB_CONFIG=%OMNIORB_CONFIG%
+```
+
+### Résumé des paquets à installer (Windows)
+
+| Composant | Source | Rôle |
+|-----------|-----------|-----------|
+| **Java 8 JDK** | Adoptium (Temurin) | `idlj`, `tnameserv`, runtime Java |
+| **omniORB** | OpenRTM.org / SourceForge (fichier ZIP) | CORBA C++, `omniNames`, `omniidl` |
+| **MySQL Server** | MySQL Installer (MSI) | Base de données |
+| **MySQL Connector/C++** | MySQL (MSI) | Connexion MySQL depuis C++ |
+
+### ⚠️ Note importante pour la compilation C++ sous Windows
+
+Pour compiler un projet C++ qui utilise omniORB et MySQL Connector, tu **dois** utiliser la **"Developer Command Prompt for VS"** de Visual Studio. C'est le seul moyen d'avoir les bons chemins vers le compilateur `cl.exe` et les bibliothèques.
+
+Dans les propriétés de ton projet Visual Studio (ou VS Code), tu devras ajouter manuellement :
+- **Include directories** : `C:\omniORB\include` et `C:\Program Files\MySQL\MySQL Connector C++ 8.0\include`
+- **Library directories** : `C:\omniORB\lib\x64_win32` et `C:\Program Files\MySQL\MySQL Connector C++ 8.0\lib64\vs14` (le nom `vs14` peut changer selon ta version de Connector)
+- **Librairies à l'édition de liens** : `omniORB4.lib`, `omnithread.lib`, `ws2_32.lib`, `advapi32.lib`, `mysqlcppconn.lib` 
+- **Macros de préprocesseur** : `__WIN32__`, `__x86__` (ou `__x64__`), `__NT__`, `__OSVERSION__=4` 
+
+C'est la partie la plus délicate de la configuration Windows.

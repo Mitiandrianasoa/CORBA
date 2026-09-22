@@ -6,8 +6,8 @@ Projet réaliste combinant tout ce qui a été vu jusqu'ici : CRUD complet, `str
 
 ## Scénario
 
-- **C++** (`cpp_server`) sert l'interface `GestionEtudiants` : CRUD étudiants + notes, stockage MySQL, calcule la moyenne.
-- **Java** (`JavaClient`) est client PRINCIPALEMENT : importe des étudiants/notes depuis des fichiers CSV, **calcule lui-même une note à partir de notes brutes puis l'insère via C++**, pilote la suppression depuis un fichier (`delete.txt`), affiche la liste avec la moyenne, écrit des fichiers résultat. Tous ces appels vont de Java vers C++ — Java décide/calcule, C++ exécute.
+- **C++** (`cpp_peer`) sert l'interface `GestionEtudiants` : CRUD étudiants + notes, stockage MySQL, calcule la moyenne.
+- **Java** (`JavaPeer`) est client PRINCIPALEMENT : importe des étudiants/notes depuis des fichiers CSV, **calcule lui-même une note à partir de notes brutes puis l'insère via C++**, pilote la suppression depuis un fichier (`delete.txt`), affiche la liste avec la moyenne, écrit des fichiers résultat. Tous ces appels vont de Java vers C++ — Java décide/calcule, C++ exécute.
 - **Java sert AUSSI 4 petites interfaces**, chacune rappelée par C++ au moment précis où il en a besoin :
   - `MentionService.calculerMention(moyenne)` → C++ calcule la moyenne, ne connaît pas le barème des mentions, demande à Java (qui lit `data/bareme_mentions.txt`).
   - `FicheService.ecrireFiche(etudiant, moyenne, mention)` → C++ recherche l'étudiant (`rechercherEtudiant`), calcule tout, puis demande à Java d'écrire le fichier fiche.
@@ -25,21 +25,21 @@ data/delete.txt ───────┘
         │ ajouterEtudiant() / ajouterNote() / calculerMoyenne() / supprimerEtudiant()
         │ genererFiche() / changerClasse() / appliquerPenalite()
         ▼
-┌─────────────────┐        MySQL (ecole_demo)        ┌──────────────┐
-│  JavaClient      │ ────────────────────────────────▶│  cpp_server   │
-│  (decide, calcule,│                                  │  (CRUD + calc,│
-│   lit/ecrit       │                                  │   execute)    │
-│   fichiers)       │                                  │               │
-│                  │                                  │               │
-│  MentionService   │ ◀──── obtenirMention(id) ─────── │               │
-│  FicheService     │ ◀──── genererFiche(id) ───────── │               │
-│  ValidationService│ ◀──── changerClasse(id, classe) ─ │               │
-│  PenaliteService  │ ◀──── appliquerPenalite(id,mat) ─ │               │
-│  (servent, lisent  │       C++ rappelle Java ici       │               │
-│   les fichiers)   │ ── calculerMention() / ──────────▶│               │
-│                  │    ecrireFiche() / classeValide() │               │
-│                  │    / obtenirPenalite()             │               │
-└─────────────────┘                                  └──────────────┘
+┌────────────────────┐    MySQL (ecole_demo)    ┌──────────────┐
+│  JavaPeer            │ ───────────────────────▶ │  cpp_peer     │
+│  (decide, calcule,   │                           │  (CRUD + calc,│
+│   lit/ecrit fichiers)│                           │   execute)    │
+│                      │                           │               │
+│  MentionService       │ ◀── obtenirMention(id) ─ │               │
+│  FicheService          │ ◀── genererFiche(id) ── │               │
+│  ValidationService     │ ◀── changerClasse(...) ─│               │
+│  PenaliteService       │ ◀── appliquerPenalite ──│               │
+│  (servent, lisent      │   C++ rappelle Java ici  │               │
+│   les fichiers)        │ ── calculerMention() ──▶ │               │
+│                        │    / ecrireFiche() /     │               │
+│                        │    classeValide() /      │               │
+│                        │    obtenirPenalite()     │               │
+└────────────────────┘                           └──────────────┘
 ```
 
 ## Structure
@@ -57,8 +57,8 @@ data/delete.txt ───────┘
 │   ├── classes_valides.txt     → une classe autorisee par ligne (lu par ValidationServiceImpl)
 │   ├── penalites.txt            → matiere:points (lu par PenaliteServiceImpl)
 │   ├── fiches/                  → un fichier par etudiant, ecrit par FicheServiceImpl
-│   ├── moyenne_etudiant.txt     → ecrit par JavaClient (etape 4)
-│   └── liste_etudiants.txt      → ecrit par JavaClient (etape 5)
+│   ├── moyenne_etudiant.txt     → ecrit par JavaPeer (etape 4)
+│   └── liste_etudiants.txt      → ecrit par JavaPeer (etape 5)
 ├── java/
 │   ├── src/
 │   │   ├── ecole/                    → genere par idlj
@@ -66,15 +66,15 @@ data/delete.txt ───────┘
 │   │   ├── FicheServiceImpl.java       → servant Java, sert C++ (fiche fichier)
 │   │   ├── ValidationServiceImpl.java  → servant Java, sert C++ (classe valide ?)
 │   │   ├── PenaliteServiceImpl.java    → servant Java, sert C++ (penalite)
-│   │   └── JavaClient.java            → client ET serveur des 4 services
+│   │   └── JavaPeer.java            → client ET serveur des 4 services
 │   └── bin/
 └── cpp/
     ├── src/
     │   ├── ecole.hh, ecoleSK.cc          → genere par omniidl
-    │   ├── GestionEtudiantsImpl.hh/.cc    → CRUD + MySQL + 3 rappels vers Java
-    │   └── cpp_server.cc                  → serveur uniquement
+    │   ├── GestionEtudiantsImpl.hh/.cc    → CRUD + MySQL + 4 rappels vers Java
+    │   └── cpp_peer.cc                    → client ET serveur
     ├── Makefile
-    └── bin/cpp_server
+    └── bin/cpp_peer
 ```
 
 ## L'IDL
@@ -148,10 +148,10 @@ module ecole {
 cd corba-test/03-gestion-etudiants
 
 # Terminal A — serveur C++ (laisser ouvert)
-./cpp/bin/cpp_server -ORBInitRef NameService=corbaname::localhost:2809
+./cpp/bin/cpp_peer -ORBInitRef NameService=corbaname::localhost:2809
 
 # Terminal B — client Java
-java -cp java/bin JavaClient -ORBInitRef NameService=corbaname::localhost:2809
+java -cp java/bin JavaPeer -ORBInitRef NameService=corbaname::localhost:2809
 ```
 
 Sortie attendue (testée), étapes 2b, 7, 8 et 9 :
@@ -199,7 +199,7 @@ Vérifié en base après l'étape 8 : Ravao Sophie a bien `classe = Terminale L`
 
 Exactement le même principe que `02-bidirectionnel` (Option B), vérifié dans les logs :
 
-| | `JavaClient` (Java) | `cpp_server` (C++) |
+| | `JavaPeer` (Java) | `cpp_peer` (C++) |
 |---|---|---|
 | **Rôle CLIENT** | Appelle `GestionEtudiants` : `ajouterEtudiant`, `ajouterNote`, `calculerMoyenne`, `supprimerEtudiant`, `listerEtudiants`, `obtenirMention`, `genererFiche`, `changerClasse`, `appliquerPenalite`... | Appelle 4 services Java : `mentionService_->calculerMention(...)`, `ficheService_->ecrireFiche(...)`, `validationService_->classeValide(...)`, `penaliteService_->obtenirPenalite(...)` |
 | **Rôle SERVEUR** | Sert 4 interfaces (`MentionService`, `FicheService`, `ValidationService`, `PenaliteService`) : POA activé, servants créés, enregistrés auprès de C++ | Sert `GestionEtudiants` : POA activé, enregistré dans l'annuaire |
@@ -207,7 +207,7 @@ Exactement le même principe que `02-bidirectionnel` (Option B), vérifié dans 
 
 ## Les 4 callbacks bidirectionnels, en détail
 
-Les 4 suivent le même schéma général : **au démarrage, `JavaClient` crée le servant, obtient sa référence, et l'enregistre auprès de C++** (`service.enregistrerXxxService(...)`). Ensuite, à chaque appel concerné, **C++ rappelle Java au milieu de son propre traitement**.
+Les 4 suivent le même schéma général : **au démarrage, `JavaPeer` crée le servant, obtient sa référence, et l'enregistre auprès de C++** (`service.enregistrerXxxService(...)`). Ensuite, à chaque appel concerné, **C++ rappelle Java au milieu de son propre traitement**.
 
 ### 1. MentionService — le plus simple
 `obtenirMention(id)` → C++ calcule la moyenne → appelle `mentionService_->calculerMention(moyenne)` → Java lit `bareme_mentions.txt` → renvoie le libellé.
@@ -218,12 +218,12 @@ Les 4 suivent le même schéma général : **au démarrage, `JavaClient` crée l
 ### 3. ValidationService — un vrai "sinon message d'erreur"
 `changerClasse(id, nouvelleClasse)` → C++ appelle `validationService_->classeValide(nouvelleClasse)` → Java lit `classes_valides.txt` ligne par ligne :
 - Si trouvée : Java renvoie `true`, C++ appelle alors **en interne** `modifierEtudiant(id, nom, prenom, nouvelleClasse)` (le "U" du CRUD, enfin exercé) → la classe change réellement en base.
-- Si absente : Java renvoie `false`, C++ n'appelle PAS `modifierEtudiant`, et `JavaClient` affiche un message d'erreur clair (`ERREUR, classe non autorisee`) sans jamais toucher la base.
+- Si absente : Java renvoie `false`, C++ n'appelle PAS `modifierEtudiant`, et `JavaPeer` affiche un message d'erreur clair (`ERREUR, classe non autorisee`) sans jamais toucher la base.
 
 ### 4. PenaliteService — même schéma "sinon rien ne se passe"
 `appliquerPenalite(id, matiere)` → C++ vérifie l'étudiant (`rechercherEtudiant`) → appelle `penaliteService_->obtenirPenalite(matiere)` → Java lit `penalites.txt` :
 - Si une règle existe (ex. `Maths:2`) : Java renvoie `2.0`, C++ exécute `UPDATE notes SET note = GREATEST(note - 2, 0) ...` → la note baisse réellement en base.
-- Si aucune règle : Java renvoie `0.0`, C++ n'exécute aucun `UPDATE`, `JavaClient` affiche `non appliquee (pas de regle ou pas de note)`.
+- Si aucune règle : Java renvoie `0.0`, C++ n'exécute aucun `UPDATE`, `JavaPeer` affiche `non appliquee (pas de regle ou pas de note)`.
 
 ## Java → C++ qui N'est PAS un callback : le calcul de note (étape 2b)
 
@@ -259,7 +259,7 @@ cd java/src && idlj -fall ../../ecole.idl && cd ../..
 cd cpp/src  && omniidl -bcxx ../../ecole.idl && cd ../..
 
 # Java
-cd java/src && javac -d ../bin ecole/*.java MentionServiceImpl.java FicheServiceImpl.java ValidationServiceImpl.java PenaliteServiceImpl.java JavaClient.java && cd ../..
+cd java/src && javac -d ../bin ecole/*.java MentionServiceImpl.java FicheServiceImpl.java ValidationServiceImpl.java PenaliteServiceImpl.java JavaPeer.java && cd ../..
 
 # C++
 cd cpp && make && cd ..
@@ -272,7 +272,7 @@ cd cpp && make && cd ..
 - **Lire un champ `string` de `struct` en C++** (ex. `res->getString("nom")`, un `std::string` JDBC-style) doit être converti avec `.c_str()` avant d'être assigné à un champ `string` IDL (`CORBA::String_member`).
 - **Passer un `struct` par `in` en C++** génère un paramètre `const ecole::Etudiant&` (référence constante), pas un pointeur — c'est pour ça que `ecrireFiche` reçoit `const ecole::Etudiant& e` et qu'on l'appelle avec `ficheService_->ecrireFiche(e.in(), ...)` (`e` étant un `Etudiant_var`).
 - **Réutiliser une fonction CORBA déjà implémentée comme brique interne** (ex. `rechercherEtudiant` appelée depuis `genererFiche`) : on l'appelle directement comme une méthode C++ normale (`rechercherEtudiant(id)`), pas via le réseau — c'est le même processus, donc un simple appel de fonction C++.
-- **Relancer une base vide à chaque test** : si tu relances `JavaClient` plusieurs fois de suite sans vider la base, les étudiants seront dupliqués. Pour repartir propre : `mysql -u ecole_user -pecole -e "DELETE FROM ecole_demo.notes; DELETE FROM ecole_demo.etudiants;"`
+- **Relancer une base vide à chaque test** : si tu relances `JavaPeer` plusieurs fois de suite sans vider la base, les étudiants seront dupliqués. Pour repartir propre : `mysql -u ecole_user -pecole -e "DELETE FROM ecole_demo.notes; DELETE FROM ecole_demo.etudiants;"`
 - **Un paramètre `in Interface` (référence d'objet) doit être dupliqué avant stockage côté serveur** : chaque `enregistrerXxxService(svc)` fait `ecole::XxxService::_duplicate(svc)` avant de stocker dans le `_var` membre, sinon la référence devient invalide après le retour de la fonction.
 - **Vérifier qu'une référence stockée n'est pas vide** : avant chaque appel vers un service Java, on teste `CORBA::is_nil(...)` — sinon, si la fonction est appelée avant que Java ne se soit enregistré, ça plante.
 - **Ne pas complexifier chaque fonction avec un callback** : un aller-retour Java↔C++↔Java n'est utile QUE si C++ a réellement besoin d'une donnée/logique côté Java. Sinon, un simple appel direct (comme pour `delete.txt`) est plus clair et plus facile à déboguer.

@@ -1,9 +1,9 @@
 CXX = g++
 CXXFLAGS = -Isrc -Wall -std=c++14
 LIBS = -lomniORB4 -lomnithread -lmysqlcppconn
-BIN = bin/cpp_server
+BIN = bin/cpp_peer
 
-SRCS = src/ecoleSK.cc src/GestionEtudiantsImpl.cc src/cpp_server.cc
+SRCS = src/ecoleSK.cc src/GestionEtudiantsImpl.cc src/cpp_peer.cc
 
 all: $(BIN)
 

@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JavaClient {
+public class JavaPeer {
 
     public static void main(String[] args) throws Exception {
         ORB orb = ORB.init(args, null);
