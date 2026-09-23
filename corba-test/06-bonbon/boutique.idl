@@ -1,0 +1,15 @@
+module boutique {
+    exception StockInsuffisant {
+        long disponible;
+    };
+
+    // Servi par JAVA : lit data/commande.txt. C'est C++ qui l'appelle.
+    interface Commande {
+        long quantiteDemandee(in string produit);
+    };
+
+    // Servi par C++ : verifie et decremente le stock MySQL. C'est Java qui l'appelle.
+    interface Stock {
+        long acheter(in string produit) raises (StockInsuffisant);  // renvoie le stock restant
+    };
+};
