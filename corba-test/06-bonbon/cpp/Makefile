@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -Isrc -Wall
 LIBS = -lomniORB4 -lomnithread -lmysqlcppconn
-BIN = bin/cpp_peer
+BIN = bin/cpp_boutique
 
 SRCS = src/boutiqueSK.cc src/StockImpl.cc src/cpp_boutique.cc
 

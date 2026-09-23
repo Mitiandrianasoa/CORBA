@@ -16,7 +16,8 @@ int main(int argc, char **argv)
     StockImpl *impl = new StockImpl(nc); // S2. servant
     PortableServer::ObjectId_var id = poa->activate_object(impl);
     boutique::Stock_var ref = impl->_this(); // S3. reference
-    nc->rebind(nc->to_name("Stock"), ref);   // S4. publier
+    CosNaming::Name_var nom = nc->to_name("Stock"); // to_name renvoie un pointeur : Name_var le libere
+    nc->rebind(nom, ref);                           // S4. publier
     std::cout << "[C++] Stock enregistre" << std::endl;
 
     orb->run(); // S5. ecouter
