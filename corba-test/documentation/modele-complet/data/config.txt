@@ -1,0 +1,2 @@
+bonbon=5
+chocolat=2

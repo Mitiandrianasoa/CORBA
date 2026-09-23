@@ -1,0 +1,40 @@
+module modele {
+    // Une ligne de table MySQL
+    struct Produit {
+        long   id;
+        string nom;
+        long   quantite;
+        double prix;
+    };
+    typedef sequence<Produit> ListeProduits;
+    typedef sequence<string>  ListeTextes;
+
+    exception Introuvable { long id; };
+    exception Refuse      { string raison; };
+
+    // Servi par C++ quand Java s'abonne (callback)
+    interface Notifiable {
+        void notifier(in string evenement);
+    };
+
+    // Servi par JAVA : tout ce qui touche aux fichiers
+    interface ServiceFichier {
+        ListeTextes lireLignes(in string fichier);
+        void        ajouterLigne(in string fichier, in string ligne);
+        boolean     contient(in string fichier, in string valeur);
+        long        lireValeur(in string fichier, in string cle) raises (Refuse);
+    };
+
+    // Servi par C++ : tout ce qui touche a MySQL
+    interface ServiceBase {
+        long          ajouter(in Produit p) raises (Refuse);
+        Produit       trouver(in long id) raises (Introuvable);
+        ListeProduits lister();
+        ListeProduits chercher(in string motif);
+        void          modifierQuantite(in long id, in long delta) raises (Introuvable, Refuse);
+        boolean       supprimer(in long id);
+        long          importer(in ListeProduits liste);
+        void          statistiques(out long nombre, out double valeurTotale);
+        void          sAbonner(in Notifiable abonne);
+    };
+};
